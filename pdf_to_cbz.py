@@ -1,14 +1,15 @@
 # Kevin Mathews 7/20/2020 rev 1.01
 # PDF to CBR Converter
 # written in Python 3
-
+import multiprocessing
+import pdb
 # Script which converts PDF files to CBZ format.
 # Tested on both Linux and Windows
 
 # manual input
 # Change read_dir and write_dir to your preference.
-read_dir = r'C:\Users\Documents\pdf_to_cbz\Books' # folder where your PDFs are located
-write_dir = r'C:\Users\Documents\Workspace\pdf_to_cbz\Completed' # folder where completed cbz files should go
+read_dir = r'/Users/sanket/Downloads/Solo Leveling_pdf' # folder where your PDFs are located
+write_dir = r'/Users/sanket/Downloads/Solo Leveling' # folder where completed cbz files should go
 
 # https://realpython.com/pdf-python/
 import os, sys
@@ -16,6 +17,8 @@ from PyPDF2 import PdfFileReader
 from pdf2image import convert_from_path
 import tempfile
 import zipfile
+
+os.makedirs(write_dir, exist_ok=True)
 
 # function to handle image conversion
 def get_pdf_photos(input_path, newZip):
@@ -86,23 +89,42 @@ def convert_pdf_to_comic(input_path, output_path):
 	# close zip file after completion
 	newZip.close()
 	print('\tsaved book', cb_file_name + '.cbz')
-	
+
+
+def process_pdf(read_file):
+	input_path = os.path.join(read_dir, read_file)
+	output_path = write_dir
+
+	# initial checks
+	assert os.path.exists(input_path) == True  # check that file exists
+	assert os.path.splitext(input_path)[1] == '.pdf'  # check that file is pdf
+
+	# print('working on', n, 'of', no_of_pdfs)
+	print(f"🚀 Processing: {input_path}")
+	convert_pdf_to_comic(input_path, output_path)
+
 if __name__ == "__main__":
 	
 	pdf_list = [i for i in os.listdir(read_dir) if i.endswith('.pdf') == True]
-	no_of_pdfs = str(len(pdf_list))
-	
-	n = 1
-	for read_file in pdf_list:
-		
-		input_path = os.path.join(read_dir, read_file)
-		output_path = write_dir
+	no_of_pdfs = len(pdf_list)
+	num_workers = min(multiprocessing.cpu_count(), no_of_pdfs)
 
-		# initial checks
-		assert os.path.exists(input_path) == True # check that file exists
-		assert os.path.splitext(input_path)[1] == '.pdf' # check that file is pdf
-		
-		print('working on', n, 'of', no_of_pdfs)
-		convert_pdf_to_comic(input_path, output_path)
+	with multiprocessing.Pool(processes=num_workers) as pool:
+		pool.map(process_pdf, pdf_list)
+
+	print("🎉 All PDFs processed successfully!")
+	# n = 1
+
+	# for read_file in pdf_list:
+	#
+	# 	input_path = os.path.join(read_dir, read_file)
+	# 	output_path = write_dir
+	#
+	# 	# initial checks
+	# 	assert os.path.exists(input_path) == True # check that file exists
+	# 	assert os.path.splitext(input_path)[1] == '.pdf' # check that file is pdf
+	#
+	# 	print('working on', n, 'of', no_of_pdfs)
+	# 	convert_pdf_to_comic(input_path, output_path)
 			
 	print('done.')
